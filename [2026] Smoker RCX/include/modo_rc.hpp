@@ -29,7 +29,7 @@ unsigned long tempoMovimentoServo = 0;
 bool servoPrecisaDesligar = false;
 
 float coefAtenuacao = 1.8; // Atenuacao da velocidade em curvas (deve ser FLOAT)
-float coefReverse = 0.9;   // Coeficiente para balancear a re (deve ser FLOAT)
+float coefReverse = 1.0;   // Coeficiente para balancear a re (deve ser FLOAT)
 float limiteCurva = 120.0; // Velocidade limite em curvas puras (deve ser FLOAT)  120
 
 const char *SMOKER = "d8:3b:da:13:62:d8";
@@ -152,7 +152,7 @@ void loopRC()
                 moverMotores(255, 255);
                 vTaskDelay(pdMS_TO_TICKS(220));
                 moverMotores(255, -255);
-                vTaskDelay(pdMS_TO_TICKS(200));
+                vTaskDelay(pdMS_TO_TICKS(260));
                 moverMotores(255, 255);
                 vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(0, 0);
@@ -165,7 +165,7 @@ void loopRC()
                 moverMotores(255, 255);
                 vTaskDelay(pdMS_TO_TICKS(220));
                 moverMotores(-255, 255);
-                vTaskDelay(pdMS_TO_TICKS(200));
+                vTaskDelay(pdMS_TO_TICKS(260));
                 moverMotores(255, 255);
                 vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(0, 0);
@@ -186,8 +186,8 @@ void loopRC()
                     // ARMA OS SERVOS (Sobe para posição inicial)
                     servo1.write(SERVO1_ARMADO);
                     servo2.write(SERVO2_ARMADO);
-                    estadoServoFechado = true;    // Marca que o robô está fechado/pronto
-                    primeiroComando = true;       // REATIVA a função de cair no 1º movimento
+                    estadoServoFechado = true; // Marca que o robô está fechado/pronto
+                    primeiroComando = false;
                     servoPrecisaDesligar = false; // Cancela desligamentos, pois armado ele deve manter a força
                 }
                 else
