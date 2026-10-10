@@ -24,9 +24,13 @@ bool ativarMira = false;
 bool primeiroComando = true;    // Flag para abrir o servo no primeiro movimento
 bool estadoServoFechado = true; // Controla se o robô está fechado (95º) ou aberto (0º)
 
+// Variáveis para desligar o servo sem travar o robô
+unsigned long tempoMovimentoServo = 0;
+bool servoPrecisaDesligar = false;
+
 float coefAtenuacao = 1.8; // Atenuacao da velocidade em curvas (deve ser FLOAT)
 float coefReverse = 0.9;   // Coeficiente para balancear a re (deve ser FLOAT)
-float limiteCurva = 200.0; // Velocidade limite em curvas puras (deve ser FLOAT)  120
+float limiteCurva = 120.0; // Velocidade limite em curvas puras (deve ser FLOAT)  120
 
 const char *SMOKER = "d8:3b:da:13:62:d8";
 
@@ -85,10 +89,20 @@ void loopRC()
                 // Se detetar QUALQUER botão de macro, gatilho, curva ou frentão
                 if (btnA || btnLB || btnRB || btnLeft || btnRight || btnUp || r2 > zonaMorta || l2 > zonaMorta || abs(direcao) > zonaMorta)
                 {
-                    servo1.write(SERVO1_ARMADO);
-                    servo2.write(SERVO2_ARMADO);
+                    // Religa o PWM caso estivesse desligado
+                    if (!servo1.attached())
+                        servo1.attach(SERVOMOTOR_PIN_1, SERVO_MIN_PULSE_US, SERVO_MAX_PULSE_US);
+                    if (!servo2.attached())
+                        servo2.attach(SERVOMOTOR_PIN_2, SERVO_MIN_PULSE_US, SERVO_MAX_PULSE_US);
+
+                    servo1.write(SERVO1_DESARMADO);
+                    servo2.write(SERVO2_DESARMADO);
                     estadoServoFechado = false;
                     primeiroComando = false;
+
+                    // Inicia a contagem para desligar o servo após a queda
+                    tempoMovimentoServo = millis();
+                    servoPrecisaDesligar = true;
                 }
             }
 
@@ -105,77 +119,90 @@ void loopRC()
             {
                 vTaskDelay(pdMS_TO_TICKS(10));
                 moverMotores(-255, 255);
-                vTaskDelay(pdMS_TO_TICKS(100));
+                vTaskDelay(pdMS_TO_TICKS(120));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(200));
+                vTaskDelay(pdMS_TO_TICKS(300));
                 moverMotores(0, 0);
                 vTaskDelay(pdMS_TO_TICKS(10));
                 moverMotores(255, -255);
-                vTaskDelay(pdMS_TO_TICKS(110));
+                vTaskDelay(pdMS_TO_TICKS(160));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(100));
+                vTaskDelay(pdMS_TO_TICKS(200));
             }
 
             else if (btnRB)
             {
                 vTaskDelay(pdMS_TO_TICKS(10));
                 moverMotores(255, -255);
-                vTaskDelay(pdMS_TO_TICKS(100));
+                vTaskDelay(pdMS_TO_TICKS(120));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(200));
+                vTaskDelay(pdMS_TO_TICKS(300));
                 moverMotores(0, 0);
                 vTaskDelay(pdMS_TO_TICKS(10));
                 moverMotores(-255, 255);
-                vTaskDelay(pdMS_TO_TICKS(110));
+                vTaskDelay(pdMS_TO_TICKS(160));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(100));
+                vTaskDelay(pdMS_TO_TICKS(200));
             }
 
             else if (btnLeft)
             {
                 moverMotores(-255, 255);
-                vTaskDelay(pdMS_TO_TICKS(40));
+                vTaskDelay(pdMS_TO_TICKS(70));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(155));
+                vTaskDelay(pdMS_TO_TICKS(220));
                 moverMotores(255, -255);
-                vTaskDelay(pdMS_TO_TICKS(190));
+                vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(170));
+                vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(0, 0);
                 vTaskDelay(pdMS_TO_TICKS(15));
             }
             else if (btnRight)
             {
                 moverMotores(255, -255);
-                vTaskDelay(pdMS_TO_TICKS(40));
+                vTaskDelay(pdMS_TO_TICKS(70));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(155));
+                vTaskDelay(pdMS_TO_TICKS(220));
                 moverMotores(-255, 255);
-                vTaskDelay(pdMS_TO_TICKS(160));
+                vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(255, 255);
-                vTaskDelay(pdMS_TO_TICKS(170));
+                vTaskDelay(pdMS_TO_TICKS(200));
                 moverMotores(0, 0);
                 vTaskDelay(pdMS_TO_TICKS(15));
             }
 
-            // ======================= || CONTROLO DO SERVO MANUAL || =======================
+            // ======================= || CONTROLE DO SERVO MANUAL || =======================
             else if (btnDown)
             {
-                if (estadoServoFechado)
+                // Religa o PWM sempre que formos dar um comando manual
+                if (!servo1.attached())
+                    servo1.attach(SERVOMOTOR_PIN_1, SERVO_MIN_PULSE_US, SERVO_MAX_PULSE_US);
+                if (!servo2.attached())
+                    servo2.attach(SERVOMOTOR_PIN_2, SERVO_MIN_PULSE_US, SERVO_MAX_PULSE_US);
+
+                if (!estadoServoFechado)
                 {
-                    // Se está fechado/desarmado, abre (Arma)
+                    // ARMA OS SERVOS (Sobe para posição inicial)
                     servo1.write(SERVO1_ARMADO);
                     servo2.write(SERVO2_ARMADO);
-                    estadoServoFechado = false;
+                    estadoServoFechado = true;    // Marca que o robô está fechado/pronto
+                    primeiroComando = true;       // REATIVA a função de cair no 1º movimento
+                    servoPrecisaDesligar = false; // Cancela desligamentos, pois armado ele deve manter a força
                 }
                 else
                 {
-                    // Se está aberto/armado, fecha (Desarma para 0º e 180º)
+                    // DESARMA OS SERVOS (Cai)
                     servo1.write(SERVO1_DESARMADO);
                     servo2.write(SERVO2_DESARMADO);
-                    estadoServoFechado = true;
+                    estadoServoFechado = false; // Marca que o robô já abriu
+                    primeiroComando = false;    // Desativa a flag (pois já caíram)
+
+                    // Inicia a contagem para desligar o servo após a queda
+                    tempoMovimentoServo = millis();
+                    servoPrecisaDesligar = true;
                 }
-                moverMotores(0, 0);             // Opcional: manter o robô parado ao alternar
+                moverMotores(0, 0);             // Mantém o robô parado ao alternar
                 vTaskDelay(pdMS_TO_TICKS(300)); // Debounce essencial para não "piscar" os servos
                 continue;
             }
@@ -284,6 +311,15 @@ void loopRC()
                             velocidadeEsquerda *= (1.0 - (abs(direcao) * coefAtenuacao) / 255.0);
                     }
                 }
+            }
+
+            // ======================= || DESLIGAMENTO AUTOMÁTICO DOS SERVOS || =======================
+            // Se passaram 400ms desde que mandámos desarmar, cortamos o sinal para pararem de forçar
+            if (servoPrecisaDesligar && (millis() - tempoMovimentoServo > 400))
+            {
+                servo1.detach();
+                servo2.detach();
+                servoPrecisaDesligar = false;
             }
 
             moverMotores(velocidadeEsquerda, velocidadeDireita);

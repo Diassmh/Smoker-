@@ -32,35 +32,30 @@ Servo servo2;
 #pragma region PINOS MOTORES
 
 // Remapeados exclusivamente para o ESP32-C3 Super Mini
-#define Motor_Direito_Positivo 0
-#define Motor_Direito_Negativo 1
-#define Motor_Esquerdo_Positivo 3
-#define Motor_Esquerdo_Negativo 4
-
-#pragma endregion
+#define Motor_Direito_Positivo 4
+#define Motor_Direito_Negativo 3
+#define Motor_Esquerdo_Positivo 1
+#define Motor_Esquerdo_Negativo 0
 
 //========================================//Servomotor//========================================//
 
 #pragma region PINOS SERVO
 
-#define SERVOMOTOR_PIN_1 20
-#define SERVOMOTOR_PIN_2 21
+#define SERVOMOTOR_PIN_1 7
+#define SERVOMOTOR_PIN_2 20
 
-// Ângulo de inicialização (quando o robô é ligado)
-#define SERVO_ANGULO_INICIAL 90
+#define SERVO1_DESARMADO 180
+#define SERVO2_DESARMADO 0
 
-// Ângulos quando o robô está DESARMADO (Fechado pelo controle)
-#define SERVO1_DESARMADO 0
-#define SERVO2_DESARMADO 180
-
-// Ângulos quando o robô está ARMADO (Aberto pelo controle) - Ajuste conforme a sua mecânica
-#define SERVO1_ARMADO 180
-#define SERVO2_ARMADO 0
+// Ângulos quando o robô está ARMADO (Aberto/Ativado pelo controle)
+// Volta para a posição inicial de 180º
+#define SERVO1_ARMADO 90 // 100
+#define SERVO2_ARMADO 90 // 100
 
 #define SERVO_FREQ_HZ 50
 #define SERVO_RESOLUTION 16
-#define SERVO_MIN_PULSE_US 544
-#define SERVO_MAX_PULSE_US 2400
+#define SERVO_MIN_PULSE_US 500
+#define SERVO_MAX_PULSE_US 2500
 
 #pragma endregion
 
